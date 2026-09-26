@@ -1,16 +1,17 @@
 #install cloudwatch agent for logs collection using Ansible
 ---
-    - name: Setup Apache and Cloudwatch on EC2
-      hosts: all
-      become: yes
-      tasks:
+- name: Setup Apache and CloudWatch on EC2
+  hosts: all
+  become: yes
 
-    - name: Install Cloudwatch Agent
+  tasks:
+
+    - name: Install CloudWatch Agent
       yum:
         name: amazon-cloudwatch-agent
         state: present
 
-    - name: Create Cloudwatch agent config
+    - name: Create CloudWatch agent config
       copy:
         dest: /opt/aws/amazon-cloudwatch-agent/bin/config.json
         content: |
@@ -30,9 +31,21 @@
               }
             }
           }
-   - name: Start the CloudWatch agent
-     command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config
 
-   - name: Check CloudWatch agent status
-     command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a status
-     register: cw_agent_status
+    - name: Start the CloudWatch agent
+      command: >
+        /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+        -a fetch-config
+        -m ec2
+        -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json
+        -s
+
+    - name: Check CloudWatch agent status
+      command: >
+        /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl
+        -a status
+      register: cw_agent_status
+
+    - name: Display CloudWatch agent status
+      debug:
+        var: cw_agent_status.stdout
